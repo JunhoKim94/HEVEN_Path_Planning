@@ -17,7 +17,7 @@ from threshold import gradient_combine, hls_combine, comb_result
 #다항식 차수
 poly_order = 2
 #조사창 너비 정하기 (이미지 좌우 크기/50)
-n_windows = 10
+n_windows = 20
 
 windows_width = 20
 #최대 픽셀 수
@@ -42,12 +42,6 @@ kernel = np.ones((7,7), np.uint8)
 ## Lane_Detection.py
 class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     def __init__(self, img):  # 초기화
-        self.x1_points1 = [None for _ in range(n_windows)]
-        self.x1_points2 = [None for _ in range(n_windows)]
-        self.x1_points3 = [None for _ in range(n_windows)]
-        self.x2_points1 = [None for _ in range(n_windows)]
-        self.x2_points2 = [None for _ in range(n_windows)]
-        self.x2_points3 = [None for _ in range(n_windows)]
         self.original_img=img
         
         #좌우 레인 디폴트 값
@@ -88,26 +82,9 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         self.bin_height, self.bin_width = self.binary_img.shape[:2]
         cv2.imshow('bin', self.binary_img)
+        
         self.search_lines(self.binary_img)
         
-        
-    def left_line(self, img, left_points): #왼쪽 라인 추출(이미지로 리턴)
-        img1 = np.zeros_like(img)
-        img1=cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
-        self.draw_points(img1, left_points, self.y_points, [255, 0, 0], thickness = 3)
-        img1 = self.draw_lane(img1, self.left_points, self.y_points, [255, 0, 255], 'left')
-        cv2.imshow('img',img1)
-        return img1
-        
-        
-    def right_line(self, img, right_points): #오른쪽 라인 추출(이미지로 리턴)
-        img1 = np.zeros_like(img)
-        img1=cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
-        self.draw_points(img1, right_points, self.y_points, [0, 255, 0], thickness =3)
-        img1 = self.draw_lane(img1, self.right_points, self.y_points, [0, 255, 0], 'right')
-        cv2.imshow('im2',img1)
-        return img1
-    
     
     def draw_both(self, img ,right_points, left_points):
         img1 = np.zeros_like(img)
@@ -161,7 +138,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             left_y = np.array(b_img[win_y_low:win_y_high,left_x_low:left_x_high].nonzero()[0]) + win_y_low
             right_x = b_img[win_y_low:win_y_high,right_x_low:right_x_high].nonzero()[1] + right_x_low
             right_y = b_img[win_y_low:win_y_high,right_x_low:right_x_high].nonzero()[0] + win_y_low
-            print(right_x)
+
             # If you found > minpix pixels, recenter next window on their mean position
             if len(left_x) > min_pixel_num:
                 current_left = np.int(np.mean(left_x))

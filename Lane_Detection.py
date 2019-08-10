@@ -48,11 +48,11 @@ class Line:
 
 ## Lane_Detection.py
 class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
-    def __init__(self, img):  # 초기화
+    def __init__(self, img,left,right):  # 초기화
         self.original_img=img
         
-        self.left = Line()
-        self.right = Line()
+        self.left = left
+        self.right = right
         
 
         self.height, self.width = img.shape[:2]
@@ -240,7 +240,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
     def warp_image(self, img): # 이미지 원근 변환
         M = cv2.getPerspectiveTransform(self.pts1, self.pts2)
-        warped_img = cv2.warpPerspective(img, M, display)
+        warped_img = cv2.warpPerspective(img, M, display,flags=cv2.INTER_LINEAR)
         cv2.imshow("warp",warped_img)
         return warped_img
     
@@ -278,12 +278,16 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
 def show_video():
     video="./video/upper1_Trim.mp4"
     cap = cv2.VideoCapture(video)
+    
+    left = Line()
+    right = Line()
+    
     while True:
         ret, img = cap.read()
         if not ret:
             print('비디오 끝')
             break
-        img1 = Lane_Detection(img)
+        img1 = Lane_Detection(img, left, right)
         cv2.imshow("adfa",img1.mask)
         cv2.imshow("zzz",img)
         '''

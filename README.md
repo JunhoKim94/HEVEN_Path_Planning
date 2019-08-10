@@ -4,14 +4,14 @@
 ```
 class Mission
 ├ ATTRIBUTE (남이 접근할 만한 것만 씀)
-├ ├ map
-├ └ target
+├ ├ 
+├ └ 
 ├ FUNCTION (채워넣어야 함)
 ├ ├ __init__()
-├ ├ update_map()
-├ ├ __static_obstacle()
-├ ├ __dynamic_obstacle()
-└ └ __parking()
+├ ├ 
+├ ├
+├ ├ 
+└ └ 
 ```
 
 ### Path_Planning.py

@@ -38,21 +38,29 @@ boundaries = [
 display = (640, 480)
 # 클로징 마스크 크기
 kernel = np.ones((7,7), np.uint8)
+class Line:
+    def __init__(self,current_line = None,prev_line = None,curve = 0,detect = False):
+        self.current_line = current_line
+        self.prev_line = prev_line
+        self.curve = curve
+        self.detect = detect
+
 
 ## Lane_Detection.py
 class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     def __init__(self, img):  # 초기화
         self.original_img=img
         
-        #좌우 레인 디폴트 값
-        self.x1_default = int(0.33*display[1])
-        self.x2_default = int(0.66*display[1])
+        self.left = Line()
+        self.right = Line()
+        
+
         self.height, self.width = img.shape[:2]
         #roi설정을 위한 vertics, 위부터 차례대로 왼쪽 위, 왼쪽 아래, 오른쪽 아래, 오른쪽 위다.
-        self.vertics = np.array([[(int(0.2*self.width), int(0.2*self.height)), 
+        self.vertics = np.array([[(int(0.1*self.width), int(0.1*self.height)), 
                                   (int(-0.5*self.width), int(0.8*self.height)),
                                   (int(1.5*self.width), int(0.8*self.height)),
-                                  (int(0.8*self.width), int(0.2*self.height))]])
+                                  (int(0.9*self.width), int(0.1*self.height))]])
     
     
         '''
@@ -102,6 +110,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         
     def search_lines(self,b_img):
+        
         histogram = np.sum(b_img[int(b_img.shape[0] / 2):, :], axis=0)
 
         monitor = np.dstack((b_img, b_img, b_img))
@@ -149,29 +158,41 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             right_lane_x.append(right_x)
             left_lane_y.append(left_y)
             right_lane_y.append(right_y)
-        cv2.imshow("ss",monitor)
-        ''' 
-        for lane in [left_lane_x,right_lane_x,left_lane_y,right_lane_y]:
-            lane = np.concatenate(lane)
-            print(lane)
+        
+        
+        left_lane_x = np.concatenate(left_lane_x)
+        left_lane_y = np.concatenate(left_lane_y)
+        right_lane_x = np.concatenate(right_lane_x)
+        right_lane_y = np.concatenate(right_lane_y)
+
+        self.left.current_line = [left_lane_x,left_lane_y]
+        self.right.current_line = [right_lane_x,right_lane_y]
+        
+        if (len(right_lane_x)>50) & (len(left_lane_x) >50):
+            left_fit = np.polyfit(left_lane_y, left_lane_x, 2)
+            right_fit = np.polyfit(right_lane_y, right_lane_x, 2)
             
-        left_fit = np.polyfit(left_lane_y, left_lane_x, 2)
-        right_fit = np.polyfit(right_lane_y, right_lane_x, 2)
-        
-        line_left = np.poly1d(left_fit)
-        line_right = np.poly1d(right_fit)
-        
+            line_left = np.poly1d(left_fit)
+            line_right = np.poly1d(right_fit)
+            
+            self.left.prev_line = line_left
+            self.right.prev_line = line_right
+        else:
+            line_left = self.left.prev_line
+            line_right = self.right.prev_line
+            
         ploty = np.linspace(0, b_img.shape[0] - 1, b_img.shape[0])
         
         y1 = line_left(ploty)
         y2 = line_right(ploty)
-        self.draw_points(monitor,left_lane_x,y1,(0,0,255),3)
-        self.draw_points(monitor,right_lane_x,y2,(0,255,0),3)
-        
+        self.draw_points(monitor,y1,ploty,(0,0,255),3)
+        self.draw_points(monitor,y2,ploty,(0,255,0),3)
+        '''
         ransac = linear_model.RANSACRegressor()
         ransac.fit(self.add_square_feature(line_y),line_x)
         y = np.round(ransac.predict(self.add_square_feature(x)))
         '''
+        cv2.imshow("ss",monitor)
         return monitor
 
     def draw_points(self, img, x_points, y_points, color, thickness):

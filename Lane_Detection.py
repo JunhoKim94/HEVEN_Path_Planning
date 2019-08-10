@@ -53,7 +53,6 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         self.left = left
         self.right = right
-        
 
         self.height, self.width = img.shape[:2]
         #roi설정을 위한 vertics, 위부터 차례대로 왼쪽 위, 왼쪽 아래, 오른쪽 아래, 오른쪽 위다.
@@ -90,7 +89,6 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         self.bin_height, self.bin_width = self.binary_img.shape[:2]
         cv2.imshow('bin', self.binary_img)
-        
         self.search_lines(self.binary_img)
         
     
@@ -105,7 +103,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return img1
     
     
-    def get_stop_line(self):  # 정지선을 반환하는 코드(정지선 제일 앞 부분)
+    def update_stopLine(self): # 정지선을 반환하는 코드(정지선 제일 앞 부분)
         print(0)
         
         

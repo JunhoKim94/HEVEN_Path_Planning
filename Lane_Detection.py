@@ -19,7 +19,7 @@ poly_order = 2
 #조사창 너비 정하기 (이미지 좌우 크기/50)
 n_windows = 20
 
-windows_width = 20
+windows_width = 40
 #최대 픽셀 수
 max_pixel_num = 80
 #최소 픽셀 수
@@ -31,7 +31,7 @@ boundaries = [
     (np.array([161, 155, 84], dtype="uint8"), np.array([179, 255, 255], dtype="uint8")), # red1
     (np.array([0, 100, 70], dtype="uint8"), np.array([20, 255, 255], dtype="uint8")), # red2
     (np.array([94, 80, 200], dtype="uint8"), np.array([126, 255, 255], dtype="uint8")), # blue
-    (np.array([10, 50, 50], dtype="uint8"), np.array([25, 255, 255], dtype="uint8")), #yellow
+    (np.array([10, 30, 50], dtype="uint8"), np.array([25, 255, 255], dtype="uint8")), #yellow
     (np.array([0, 0, 240], dtype="uint8"), np.array([180, 25, 255], dtype="uint8")) # white
 ]
 # 모니터링 창 크기
@@ -39,12 +39,15 @@ display = (640, 480)
 # 클로징 마스크 크기
 kernel = np.ones((7,7), np.uint8)
 class Line:
-    def __init__(self,current_line = None,prev_line = None,curve = 0,detect = False):
-        self.current_line = current_line
-        self.prev_line = prev_line
+    def __init__(self,current_line = None,curve = 0,detect = False):
+        self.current_fit = [np.array([False])]
+        self.prevx = []
+        self.allx = None
+        self.ally = None
         self.curve = curve
         self.detect = detect
-
+        # polynomial coefficients for the most recent fit
+        self.current_fit = [np.array([False])]
 
 ## Lane_Detection.py
 class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
@@ -53,44 +56,62 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         self.left = left
         self.right = right
+        
 
         self.height, self.width = img.shape[:2]
         #roi설정을 위한 vertics, 위부터 차례대로 왼쪽 위, 왼쪽 아래, 오른쪽 아래, 오른쪽 위다.
-        self.vertics = np.array([[(int(0.1*self.width), int(0.1*self.height)), 
-                                  (int(-0.5*self.width), int(0.8*self.height)),
-                                  (int(1.5*self.width), int(0.8*self.height)),
-                                  (int(0.9*self.width), int(0.1*self.height))]])
+        
+        self.vertics = np.array([[(int(0.4*self.width), int(0.05*self.height)), 
+                                  (int(-2*self.width), int(0.8*self.height)),
+                                  (int(3*self.width), int(0.8*self.height)),
+                                  (int(0.6*self.width), int(0.05*self.height))]])
     
     
         '''
-        self.vertics = np.array([[(int(0.33*self.width), int(0.83*self.height)), 
-                                  (int(0.16*self.width), int(self.height)),
-                                  (int(0.84*self.width), int(self.height)),
-                                  (int(0.67*self.width), int(0.83*self.height))]])    
+        self.vertics = np.array([[(int(0.3*self.width), int(0.5*self.height)), 
+                                  (int(0*self.width), int(0.9*self.height)),
+                                  (int(1*self.width), int(0.9*self.height)),
+                                  (int(0.7*self.width), int(0.5*self.height))]])    
+        
         '''
-    
         #perspective변환을 위한 pts 설정
-        self.pts1 = np.float32([(0.38*self.width, 0.08*self.height), 
-                                (0*self.width, 0.5*self.height),
-                                (1*self.width, 0.5*self.height),
-                                (0.58*self.width, 0.08*self.height)])
+        
+        self.pts1 = np.float32([(0.4*self.width, 0.05*self.height), 
+                                (0*self.width, 0.45*self.height),
+                                (0.81*self.width, 0.45*self.height),
+                                (0.55*self.width, 0.05*self.height)])
+        '''
+        self.pts1 = np.float32([(0*self.width, 0.6*self.height),
+                                (0.1*self.width, 0.9*self.height),
+                                (1*self.width, 0.9*self.height),
+                                (0.6*self.width, 0.6*self.height)])
+        '''
         self.temp1, self.temp2 = display[:2]
-        self.pts2 = np.float32([(0.33*self.temp1, 0*self.temp2),
-                                (0.33*self.temp1, 1*self.temp2),
-                                (0.66*self.temp1, 1*self.temp2),
-                                (0.66*self.temp1, 0*self.temp2)])
-        '''
-        self.pts2 = np.float32([(0.33*self.temp1, 0*self.temp2),
-                                (0.33*self.temp1, 1*self.temp2),
-                                (0.66*self.temp1, 1*self.temp2),
-                                (0.66*self.temp1, 0*self.temp2)])
-        '''
+        self.pts2 = np.float32([(0.3*self.temp1, 0*self.temp2),
+                                (0.3*self.temp1, 1*self.temp2),
+                                (0.7*self.temp1, 1*self.temp2),
+                                (0.7*self.temp1, 0*self.temp2)])
+
         self.binary_img = self.make_binary()
         
         self.bin_height, self.bin_width = self.binary_img.shape[:2]
         cv2.imshow('bin', self.binary_img)
+        
         self.search_lines(self.binary_img)
         
+    def smoothing(self,lines, pre_lines=3):
+        # collect lines & print average line
+        lines = np.squeeze(lines)
+        avg_line = np.zeros((480))
+    
+        for ii, line in enumerate(reversed(lines)):
+            if ii == pre_lines:
+                break
+            avg_line += line
+        avg_line = avg_line / pre_lines
+    
+        return avg_line
+
     
     def draw_both(self, img ,right_points, left_points):
         img1 = np.zeros_like(img)
@@ -103,7 +124,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return img1
     
     
-    def update_stopLine(self): # 정지선을 반환하는 코드(정지선 제일 앞 부분)
+    def get_stop_line(self):  # 정지선을 반환하는 코드(정지선 제일 앞 부분)
         print(0)
         
         
@@ -158,38 +179,70 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             right_lane_y.append(right_y)
         
         
-        left_lane_x = np.concatenate(left_lane_x)
-        left_lane_y = np.concatenate(left_lane_y)
-        right_lane_x = np.concatenate(right_lane_x)
-        right_lane_y = np.concatenate(right_lane_y)
+        lx = np.concatenate(left_lane_x)
+        ly = np.concatenate(left_lane_y)
+        rx = np.concatenate(right_lane_x)
+        ry = np.concatenate(right_lane_y)
 
-        self.left.current_line = [left_lane_x,left_lane_y]
-        self.right.current_line = [right_lane_x,right_lane_y]
+        self.left.current_line = [lx,ly]
+        self.right.current_line = [rx,ry]
         
-        if (len(right_lane_x)>50) & (len(left_lane_x) >50):
-            left_fit = np.polyfit(left_lane_y, left_lane_x, 2)
-            right_fit = np.polyfit(right_lane_y, right_lane_x, 2)
-            
-            line_left = np.poly1d(left_fit)
-            line_right = np.poly1d(right_fit)
-            
-            self.left.prev_line = line_left
-            self.right.prev_line = line_right
-        else:
-            line_left = self.left.prev_line
-            line_right = self.right.prev_line
-            
         ploty = np.linspace(0, b_img.shape[0] - 1, b_img.shape[0])
         
+        '''
+        ransac1 = linear_model.RANSACRegressor()
+        ransac2 = linear_model.RANSACRegressor()
+        ransac1.fit(self.add_square_feature(ly),lx)
+        ransac2.fit(self.add_square_feature(ry),rx)
+        y1 = np.round(ransac1.predict(self.add_square_feature(ploty)))
+        y2 = np.round(ransac2.predict(self.add_square_feature(ploty)))
+        '''
+        
+        left_fit = np.polyfit(ly, lx, 2)
+        right_fit = np.polyfit(ry, rx, 2)
+            
+        line_left = np.poly1d(left_fit)
+        line_right = np.poly1d(right_fit)
+                        
         y1 = line_left(ploty)
         y2 = line_right(ploty)
+               
+        if (len(rx)>2000) & (len(lx) >2000):
+            self.left.prevx.append(y1)
+            self.right.prevx.append(y2)
+    
+            self.left.detect = True
+            self.right.detect = True
+        else:
+            self.left.detect = False
+            self.right.detect = False
+        
+        if len(self.left.prevx) > 10:
+            self.left.prevx.pop(0)
+            left_avg_line = self.smoothing(self.left.prevx, 10)
+            left_avg_fit = np.polyfit(ploty, left_avg_line, 2)
+            left_fit_plotx = left_avg_fit[0] * ploty ** 2 + left_avg_fit[1] * ploty + left_avg_fit[2]
+            self.left.current_fit = left_avg_fit
+            self.left.allx, self.left.ally = left_fit_plotx, ploty
+        else:
+            self.left.current_fit = left_fit
+            self.left.allx, self.left.ally = y1, ploty
+    
+        if len(self.right.prevx) > 10:
+            self.right.prevx.pop(0)
+            right_avg_line = self.smoothing(self.right.prevx, 10)
+            right_avg_fit = np.polyfit(ploty, right_avg_line, 2)
+            right_fit_plotx = right_avg_fit[0] * ploty ** 2 + right_avg_fit[1] * ploty + right_avg_fit[2]
+            self.right.current_fit = right_avg_fit
+            self.right.allx, self.right.ally = right_fit_plotx, ploty
+        else:
+            self.right.current_fit = right_fit
+            self.right.allx, self.right.ally = y2, ploty
+        print(len(self.left.prevx))
+        
         self.draw_points(monitor,y1,ploty,(0,0,255),3)
         self.draw_points(monitor,y2,ploty,(0,255,0),3)
-        '''
-        ransac = linear_model.RANSACRegressor()
-        ransac.fit(self.add_square_feature(line_y),line_x)
-        y = np.round(ransac.predict(self.add_square_feature(x)))
-        '''
+
         cv2.imshow("ss",monitor)
         return monitor
 
@@ -208,19 +261,16 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     def make_binary(self): # 이진화 이미지를 만드는 함수
         img = self.reg_of_int(self.original_img)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+        img = self.Detect(img)
         warped_img = self.warp_image(img)
-        img1 = np.zeros_like(warped_img)
-        img1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY)
+        #img1 = np.zeros_like(warped_img)
+        #img1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY)
         
         #img1 = self.Detect(warped_img)
-        
-        for index in ['b','y','w']: # 색깔별로 채널 추출
-            img2 = self.detectcolor(warped_img, index)
-            img1 = cv2.bitwise_or(img1, img2)
-        
+
         #warped_img = self.warp_image(img1) 
         
-        img1 = self.closeimage(img1)
+        img1 = self.closeimage(warped_img)
         return img1
     
     def add_square_feature(self,X):
@@ -243,12 +293,20 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return warped_img
     
     def Detect(self,img):
-        th_sobelx, th_sobely, th_mag, th_dir = (35, 100), (30, 255), (30, 255), (0.7, 1.3)
-        th_h, th_l, th_s = (10, 100), (0, 60), (85, 255)
-        combined_gradient = gradient_combine(img, th_sobelx, th_sobely, th_mag, th_dir)
-        combined_hls = hls_combine(img, th_h, th_l, th_s)
-        combined_result = comb_result(combined_gradient, combined_hls)
+        #th_sobelx, th_sobely, th_mag, th_dir = (35, 100), (30, 255), (30, 255), (0.7, 1.3)
+        #th_h, th_l, th_s = (10, 100), (0, 60), (85, 255)
+        #combined_gradient = gradient_combine(img, th_sobelx, th_sobely, th_mag, th_dir)
+        combined_hsv = cv2.cvtColor(np.zeros_like(img), cv2.COLOR_BGR2GRAY)
+        
+        for color in ['w', 'y', 'b']:
+            combined_hsv = cv2.bitwise_or(combined_hsv, self.detectcolor(img, color))
+            
+        blur_img = cv2.GaussianBlur(img, (7,7), 10)
+        #blur_img = cv2.bilateralFilter(img,15,45,75)
+        canny_img = cv2.Canny(blur_img, 150, 180, edges = None, apertureSize = 3)
+        combined_result = comb_result(canny_img, combined_hsv)
         return combined_result
+        
         
     def detectcolor(self, img, color): # color = b, r, w, y / 이미지 상에서 색을 찾아 리턴
         minRange, maxRange = 0, 0
@@ -274,7 +332,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 def show_video():
-    video="./video/upper1_Trim.mp4"
+    video="./video/upper3_Trim.mp4"
     cap = cv2.VideoCapture(video)
     
     left = Line()

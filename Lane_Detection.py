@@ -32,7 +32,7 @@ boundaries = [
     (np.array([0, 100, 70], dtype="uint8"), np.array([20, 255, 255], dtype="uint8")), # red2
     (np.array([94, 80, 200], dtype="uint8"), np.array([126, 255, 255], dtype="uint8")), # blue
     (np.array([10, 30, 50], dtype="uint8"), np.array([25, 255, 255], dtype="uint8")), #yellow
-    (np.array([0, 0, 240], dtype="uint8"), np.array([180, 25, 255], dtype="uint8")) # white
+    (np.array([0, 0, 180], dtype="uint8"), np.array([180, 25, 255], dtype="uint8")) # white
 ]
 # 모니터링 창 크기
 display = (640, 480)
@@ -76,10 +76,10 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         '''
         #perspective변환을 위한 pts 설정
         
-        self.pts1 = np.float32([(0.4*self.width, 0.05*self.height), 
-                                (0*self.width, 0.45*self.height),
-                                (0.81*self.width, 0.45*self.height),
-                                (0.55*self.width, 0.05*self.height)])
+        self.pts1 = np.float32([(0.45*self.width, 0.07*self.height), 
+                                (0.1*self.width, 0.4*self.height),
+                                (0.9*self.width, 0.4*self.height),
+                                (0.55*self.width, 0.07*self.height)])
         '''
         self.pts1 = np.float32([(0*self.width, 0.6*self.height),
                                 (0.1*self.width, 0.9*self.height),
@@ -87,17 +87,17 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
                                 (0.6*self.width, 0.6*self.height)])
         '''
         self.temp1, self.temp2 = display[:2]
-        self.pts2 = np.float32([(0.3*self.temp1, 0*self.temp2),
-                                (0.3*self.temp1, 1*self.temp2),
-                                (0.7*self.temp1, 1*self.temp2),
-                                (0.7*self.temp1, 0*self.temp2)])
+        self.pts2 = np.float32([(0.3*self.temp1, 0.2*self.temp2),
+                                (0.3*self.temp1, 0.8*self.temp2),
+                                (0.7*self.temp1, 0.8*self.temp2),
+                                (0.7*self.temp1, 0.2*self.temp2)])
 
         self.binary_img = self.make_binary()
         
         self.bin_height, self.bin_width = self.binary_img.shape[:2]
         cv2.imshow('bin', self.binary_img)
         
-        self.search_lines(self.binary_img)
+        self.map = self.search_lines(self.binary_img)
         
     def smoothing(self,lines, pre_lines=3):
         # collect lines & print average line
@@ -111,23 +111,10 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         avg_line = avg_line / pre_lines
     
         return avg_line
-
-    
-    def draw_both(self, img ,right_points, left_points):
-        img1 = np.zeros_like(img)
-        img1=cv2.cvtColor(img1, cv2.COLOR_GRAY2BGR)
-        self.draw_points(img1, left_points, self.y_points, [255, 0, 0], thickness = 3)
-        img1 = self.draw_lane(img1, left_points, self.y_points, [255, 0, 255], 'left')
-        self.draw_points(img1, right_points, self.y_points, [0, 255, 0], thickness =3)
-        img1 = self.draw_lane(img1, right_points, self.y_points, [0, 255, 0], 'right')
-        cv2.imshow("zz",img1)
-        return img1
-    
     
     def get_stop_line(self):  # 정지선을 반환하는 코드(정지선 제일 앞 부분)
         print(0)
-        
-        
+               
     def search_lines(self,b_img):
         
         histogram = np.sum(b_img[int(b_img.shape[0] / 2):, :], axis=0)
@@ -238,10 +225,9 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         else:
             self.right.current_fit = right_fit
             self.right.allx, self.right.ally = y2, ploty
-        print(len(self.left.prevx))
         
-        self.draw_points(monitor,y1,ploty,(0,0,255),3)
-        self.draw_points(monitor,y2,ploty,(0,255,0),3)
+        self.draw_points(monitor,self.left.allx,ploty,(0,0,255),3)
+        self.draw_points(monitor,self.right.allx,ploty,(0,255,0),3)
 
         cv2.imshow("ss",monitor)
         return monitor
@@ -261,17 +247,12 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     def make_binary(self): # 이진화 이미지를 만드는 함수
         img = self.reg_of_int(self.original_img)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-        img = self.Detect(img)
-        warped_img = self.warp_image(img)
-        #img1 = np.zeros_like(warped_img)
-        #img1 = cv2.cvtColor(img1,cv2.COLOR_BGR2GRAY)
-        
-        #img1 = self.Detect(warped_img)
 
-        #warped_img = self.warp_image(img1) 
-        
-        img1 = self.closeimage(warped_img)
-        return img1
+        img = self.warp_image(img)
+        img = self.Detect(img)
+        img = self.closeimage(img)
+              
+        return img
     
     def add_square_feature(self,X):
         X = np.array(X)
@@ -282,7 +263,6 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     def reg_of_int(self, img): # 이미지에서 roi 잘라내기
         self.mask = np.zeros_like(img)
         cv2.fillPoly(self.mask, self.vertics, (255,255,255))
-        #cv2.fillPoly(self.mask, self.vertics_erase, (0,0,0))
         self.mask = cv2.bitwise_and(img, self.mask)
         return self.mask
         
@@ -301,9 +281,10 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         for color in ['w', 'y', 'b']:
             combined_hsv = cv2.bitwise_or(combined_hsv, self.detectcolor(img, color))
             
-        blur_img = cv2.GaussianBlur(img, (7,7), 10)
-        #blur_img = cv2.bilateralFilter(img,15,45,75)
-        canny_img = cv2.Canny(blur_img, 150, 180, edges = None, apertureSize = 3)
+        #blur_img = cv2.GaussianBlur(img, (7,7), 10)
+        #L2 정규화 추가로 noise 제거
+        img2 = cv2.cvtColor(img,cv2.COLOR_HSV2BGR)
+        canny_img = cv2.Canny(img2, 150, 230, edges = None, apertureSize = 3,L2gradient=True)
         combined_result = comb_result(canny_img, combined_hsv)
         return combined_result
         
@@ -332,7 +313,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 def show_video():
-    video="./video/upper3_Trim.mp4"
+    video="./video/pre_lane.avi"
     cap = cv2.VideoCapture(video)
     
     left = Line()
@@ -346,15 +327,7 @@ def show_video():
         img1 = Lane_Detection(img, left, right)
         cv2.imshow("adfa",img1.mask)
         cv2.imshow("zzz",img)
-        '''
-        b,g,r = cv2.split(img)
-        ret , r_th = cv2.threshold(r,220,255,cv2.THRESH_BINARY)
-        img1 = r_th
-        '''
         
-        #img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
-        #cv2.waitKey(1)
-        #cv2.imshow("fff",img)
         if cv2.waitKey(1) & 0xFF == 27:
             break        
 

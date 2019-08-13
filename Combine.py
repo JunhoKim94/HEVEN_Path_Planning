@@ -10,7 +10,6 @@
 
 '''
 import Lane_Detection
-import Lidar
 import cv2
 import numpy as np
 
@@ -31,6 +30,9 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
     def update_map(self):
         img = self.database.main_cam.data
         Lane_map = Lane_Detection(img)
+        Map = Lane_map.map
+        left = Lane_map.left
+        right = Lane_map.right
         lidar = self.database.lidar.data
         
         x = np.sin(angle)*lidar
@@ -47,16 +49,19 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
         y = 680 *y / l /2
         
         for i in range(len(lidar)):
-            cv2.line(img,(y,x),(y,x),(255,255,255))
+            cv2.line(Map,(y,x),(y,x),(255,255,255))
+        self.map = cv2.cvtColor(Map,cv2.COLOR_BGR2GRAY)
         self.map = img
 
     ########## 각 상황에 맞게 Lidar, Lane_Detection 이용하여 함수 짜기 ##########
     ## 신호/비신호는 path를 짜는것에 있어서는 같을 것 같아 하나로 묶음
     ## 각 상황에 맞는 map과 local target값을 넣으면
     def __static_obstacle(self):
+        print(0)
         # map, target 만들기
         
     def __dynamic_obstacle(self):
+        print(0)
         # map, target 만들기
         
     def __parking(self):
@@ -213,3 +218,6 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
                 cv2.imshow('final', new_map)
 
             # ================================================================== #
+
+if __name__ == "__main__":
+    Combine()

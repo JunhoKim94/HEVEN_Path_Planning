@@ -54,8 +54,8 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
     def get_floor_color(self, img):
         img1 = cv2.cvtColor(img, cv2.COLOR_HSV2BGR) #상황에 따라 적절하게 모드변환
-        left_high = (int(0.4*display[0]), int(0.5*display[1]))
-        right_low = (int(0.6*display[0]), int(0.9*display[1]))
+        left_high = (int(0.4*self.display[0]), int(0.5*self.display[1]))
+        right_low = (int(0.6*self.display[0]), int(0.9*self.display[1]))
         img2 = img1[left_high[1]:right_low[1], left_high[0]:right_low[0]]
         b, g, r = cv2.split(img2)
         avg = np.mean(r)

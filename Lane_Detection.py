@@ -1,7 +1,6 @@
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
-from threshold import gradient_combine, hls_combine, comb_result
 from scipy.stats import skewnorm
 from line.util import make_binary, smoothing, draw_points
 

@@ -1,10 +1,7 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import skewnorm
 from line.util import make_binary, smoothing, draw_points
 
-# 
 '''
 #################### PATH PLAN TEAM ####################
 ## ABOUT
@@ -13,22 +10,8 @@ from line.util import make_binary, smoothing, draw_points
 - input: 카메라 원
 - output: 각 미션 별 packet
 '''
-
-#다항식 차수
-poly_order = 2
-#조사창 너비 정하기 (이미지 좌우 크기/50)
-n_windows = 20
-
-windows_width = 20
-#최대 픽셀 수
-max_pixel_num = 100
-#최소 픽셀 수
-min_pixel_num = 30
-
-display = (800, 600)
-
 class Line:
-    def __init__(self,current_line = None,curve = 0,detect = False):
+    def __init__(self,current_line = None,curve = 0, detect = False):
         self.current_fit = [np.array([False])]
         self.prevx = []
         self.allx = None
@@ -40,24 +23,24 @@ class Line:
 
 ## Lane_Detection.py
 class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
-    def __init__(self, img,left,right):  # 초기화
-        self.original_img=img
+    def __init__(self, poly_order = 2, n_windows = 10 , windows_width = 20 , display =(800,600), min_pixel_num = 30):  # 초기화
+        self.left = Line()
+        self.right = Line()
+        self.poly_order = poly_order
+        self.n_windows = n_windows
+        self.windows_width = windows_width
+        self.min_pixel_num = min_pixel_num
+        self.display = display
         
-        self.left = left
-        self.right = right
-        
-        #midpoint = np.int(display[1]/2)
-
-        
-    def run(self):
-        self.binary_img = make_binary(self.original_img)
+    def run(self,img):
+        self.binary_img = make_binary(img,self.display)
         cv2.imshow('bin', self.binary_img)
         self.map = self.search_lines(self.binary_img)
         
     def get_stop_line(self,img):  # 정지선을 반환하는 코드(정지선 제일 앞 부분)
         cv2.imshow('hi', img)
-        left_high = (int(0.3*display[0]), int(0.94*display[1]))
-        right_low = (int(0.7*display[0]), int(0.98*display[1]))
+        left_high = (int(0.3*self.display[0]), int(0.94*self.display[1]))
+        right_low = (int(0.7*self.display[0]), int(0.98*self.display[1]))
         img1 = img[left_high[1]:right_low[1], left_high[0]:right_low[0]]
         img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         num = cv2.countNonZero(img1)
@@ -86,7 +69,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         left_x_max = np.argmax(left_sk*histogram[:midpoint])
         right_x_max = np.argmax(right_sk*histogram[midpoint:]) + midpoint
 
-        window_height = np.int(b_img.shape[0]/n_windows)
+        window_height = np.int(b_img.shape[0]/self.n_windows)
         
         #print(b_img.nonzero())
         
@@ -98,13 +81,13 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         left_lane_y = []
         right_lane_y = []
         
-        for windows in range(n_windows):
+        for windows in range(self.n_windows):
             win_y_low = b_img.shape[0] - (windows+1) * window_height
-            win_y_high = win_y_low +window_height
-            left_x_low = current_left - windows_width
-            left_x_high = current_left + windows_width
-            right_x_low = current_right - windows_width
-            right_x_high = current_right + windows_width
+            win_y_high = win_y_low + window_height
+            left_x_low = current_left - self.windows_width
+            left_x_high = current_left + self.windows_width
+            right_x_low = current_right - self.windows_width
+            right_x_high = current_right + self.windows_width
             
             
             cv2.rectangle(monitor, (left_x_low, win_y_low), (left_x_high, win_y_high), (0, 255, 0), 2)
@@ -116,9 +99,9 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             right_y = b_img[win_y_low:win_y_high,right_x_low:right_x_high].nonzero()[0] + win_y_low
 
             # If you found > minpix pixels, recenter next window on their mean position
-            if len(left_x) > min_pixel_num:
+            if len(left_x) > self.min_pixel_num:
                 current_left = np.int(np.mean(left_x))
-            if len(right_x) > min_pixel_num:
+            if len(right_x) > self.min_pixel_num:
                 current_right = np.int(np.mean(right_x))
                 
             left_lane_x.append(left_x)
@@ -137,8 +120,8 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         ploty = np.linspace(0, b_img.shape[0] - 1, b_img.shape[0])
         
-        left_fit = np.polyfit(ly, lx, 2)
-        right_fit = np.polyfit(ry, rx, 2)
+        left_fit = np.polyfit(ly, lx, self.poly_order)
+        right_fit = np.polyfit(ry, rx, self.poly_order)
             
         line_left = np.poly1d(left_fit)
         line_right = np.poly1d(right_fit)
@@ -160,8 +143,8 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
         if len(self.left.prevx) > num:
             self.left.prevx.pop(0)
-            left_avg_line = smoothing(self.left.prevx, num)
-            left_avg_fit = np.polyfit(ploty, left_avg_line, poly_order)
+            left_avg_line = smoothing(self.left.prevx, num, self.display)
+            left_avg_fit = np.polyfit(ploty, left_avg_line, self.poly_order)
             l = np.poly1d(left_avg_fit)
             left_fit_plotx = l(ploty)
             self.left.current_fit = left_avg_fit
@@ -173,8 +156,8 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     
         if len(self.right.prevx) > num:
             self.right.prevx.pop(0)
-            right_avg_line = smoothing(self.right.prevx, num)
-            right_avg_fit = np.polyfit(ploty, right_avg_line, poly_order)
+            right_avg_line = smoothing(self.right.prevx, num, self.display)
+            right_avg_fit = np.polyfit(ploty, right_avg_line, self.poly_order)
             r = np.poly1d(right_avg_fit)
             right_fit_plotx = r(ploty)
             self.right.current_fit = right_avg_fit
@@ -190,24 +173,18 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         cv2.imshow("ss",monitor)
         return monitor
 
-
-            
-
-
 def show_video():
     video="./video/pre_lane_Trim.mp4"
     cap = cv2.VideoCapture(video)
     
-    left = Line()
-    right = Line()
-    
+    lane = Lane_Detection()
     while True:
         ret, img = cap.read()
         if not ret:
             print('비디오 끝')
             break
-        lane = Lane_Detection(img, left, right)
-        lane.run()
+       
+        lane.run(img)
         cv2.imshow("zzz",img)
         
         if cv2.waitKey(1) & 0xFF == 27:

@@ -9,10 +9,6 @@ boundaries = [
     (np.array([10, 30, 50], dtype="uint8"), np.array([25, 255, 255], dtype="uint8")), #yellow
     (np.array([0, 0, 180], dtype="uint8"), np.array([180, 25, 255], dtype="uint8")) # white
 ]
-# 모니터링 창 크기
-display = (800, 600)
-# 클로징 마스크 크기
-kernel = np.ones((7,7), np.uint8)
 
 def reg_of_int(img): # 이미지에서 roi 잘라내기
     height, width = img.shape[:2]
@@ -38,11 +34,21 @@ def draw_points(img, x_points, y_points, color, thickness):
     except:
         print("error2")
 
-def warp_image(img): # 이미지 원근 변환
+def warp_image(img,display): # 이미지 원근 변환
     height, width = img.shape[:2]
-    pts1 = np.float32([(0.45*width, 0.07*height),(0.1*width, 0.4*height),(0.9*width, 0.4*height),(0.55*width, 0.07*height)])
+    
+    pts1 = np.float32([(0.45*width, 0.07*height),
+                       (0.1*width, 0.4*height),
+                       (0.9*width, 0.4*height),
+                       (0.55*width, 0.07*height)])
+    
     temp1,temp2 = display[:2]
-    pts2 = np.float32([(0.4*temp1, -0.4*temp2),(0.4*temp1, 1*temp2),(0.6*temp1, 1*temp2),(0.6*temp1, -0.4*temp2)])
+    
+    pts2 = np.float32([(0.4*temp1, -0.4*temp2),
+                       (0.4*temp1, 1*temp2),
+                       (0.6*temp1, 1*temp2),
+                       (0.6*temp1, -0.4*temp2)])
+    
     M = cv2.getPerspectiveTransform(pts1, pts2)
     warped_img = cv2.warpPerspective(img, M, display,flags=cv2.INTER_CUBIC+cv2.INTER_LINEAR)
     return warped_img
@@ -85,7 +91,7 @@ def detectcolor(img, color): # color = b, r, w, y / 이미지 상에서 색을 �
         print("In Image_util.py DetectColor - Wrong color Argument")
     return mask
 
-def closeimage(img):
+def closeimage(img,kernel = np.ones((7,7), np.uint8)):
     return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 def comb_result(grad, hls):
@@ -97,7 +103,7 @@ def comb_result(grad, hls):
 
     return result
 
-def smoothing(lines, pre_lines=3):
+def smoothing(lines, pre_lines=3, display = (800,600)):
     # collect lines & print average line
     lines = np.squeeze(lines)
     avg_line = np.zeros((display[1]))
@@ -110,13 +116,13 @@ def smoothing(lines, pre_lines=3):
 
     return avg_line
 
-def make_binary(original_img): # 이진화 이미지를 만드는 함수
+def make_binary(original_img,display): # 이진화 이미지를 만드는 함수
     img = reg_of_int(original_img)
-    for_test = warp_image(img)
+    for_test = warp_image(img,display)
     cv2.imshow("for_test", for_test)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     img = Detect(img)
-    #img = self.closeimage(img)
-    img = warp_image(img)
+    #img = self.closeimage(img,7)
+    img = warp_image(img,display)
           
     return img

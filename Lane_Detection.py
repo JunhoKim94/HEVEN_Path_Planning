@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from sklearn import linear_model
 import matplotlib.pyplot as plt
 from threshold import gradient_combine, hls_combine, comb_result
 
@@ -204,22 +203,26 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             self.left.detect = False
             self.right.detect = False
         
-        if len(self.left.prevx) > 10:
+        num = 5
+        
+        if len(self.left.prevx) > num:
             self.left.prevx.pop(0)
-            left_avg_line = self.smoothing(self.left.prevx, 10)
-            left_avg_fit = np.polyfit(ploty, left_avg_line, 2)
-            left_fit_plotx = left_avg_fit[0] * ploty ** 2 + left_avg_fit[1] * ploty + left_avg_fit[2]
+            left_avg_line = self.smoothing(self.left.prevx, num)
+            left_avg_fit = np.polyfit(ploty, left_avg_line, poly_order)
+            l = np.poly1d(left_avg_fit)
+            left_fit_plotx = l(ploty)
             self.left.current_fit = left_avg_fit
             self.left.allx, self.left.ally = left_fit_plotx, ploty
         else:
             self.left.current_fit = left_fit
             self.left.allx, self.left.ally = y1, ploty
     
-        if len(self.right.prevx) > 10:
+        if len(self.right.prevx) > num:
             self.right.prevx.pop(0)
-            right_avg_line = self.smoothing(self.right.prevx, 10)
-            right_avg_fit = np.polyfit(ploty, right_avg_line, 2)
-            right_fit_plotx = right_avg_fit[0] * ploty ** 2 + right_avg_fit[1] * ploty + right_avg_fit[2]
+            right_avg_line = self.smoothing(self.right.prevx, num)
+            right_avg_fit = np.polyfit(ploty, right_avg_line, poly_order)
+            r = np.poly1d(right_avg_fit)
+            right_fit_plotx = r(ploty)
             self.right.current_fit = right_avg_fit
             self.right.allx, self.right.ally = right_fit_plotx, ploty
         else:

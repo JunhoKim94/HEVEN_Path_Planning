@@ -68,7 +68,18 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             return True
         else:
             return False
-               
+        
+    def get_floor_color(self, img):
+        img1 = cv2.cvtColor(img, cv2.COLOR_HSV2BGR) #상황에 따라 적절하게 모드변환
+        left_high = (int(0.4*display[0]), int(0.5*display[1]))
+        right_low = (int(0.6*display[0]), int(0.9*display[1]))
+        img2 = img1[left_high[1]:right_low[1], left_high[0]:right_low[0]]
+        b, g, r = cv2.split(img2)
+        avg = np.mean(r)
+        
+        if(avg>160):
+            return('red')
+            
     def search_lines(self,b_img):
         
         histogram = np.sum(b_img[int(b_img.shape[0]/1.5):, :], axis=0)

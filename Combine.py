@@ -12,13 +12,18 @@
 import Lane_Detection
 import cv2
 import numpy as np
+import math
 
+#1m/pixel
+x_scale = 3
+y_scale = 4
 # Input : DB, Mission number 
 # Output : target, map
 class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할듯..?
     def __init__(self, mission_number,database):  # 초기화
         self.__mission_number = mission_number
         self.database = database
+        self.Lane_detect = Lane_Detection(None)
         self.radius = 5 # 5m to see
         self.map = [(0,0)]
         self.target = (0,0)
@@ -28,30 +33,31 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
         elif self.__mission_num == 2: self.__parking() 
 
     def update_map(self):
-        img = self.database.main_cam.data
-        Lane_map = Lane_Detection(img)
-        Map = Lane_map.map
-        left = Lane_map.left
-        right = Lane_map.right
+        self.Lane_detect(self.datatbase.main_cam.data)
+        left = self.Lane_detect.left
+        right = self.Lane_detect.right
         lidar = self.database.lidar.data
         
-        x = np.sin(angle)*lidar
-        y = np.cos(angle)*lidar
-
-        position = np.vstack([x,y])
+        line_left = np.poly1d(left)
+        line_right = np.poly1d(right)
+        
+        ob = [(line_left(i), i) for i in range(80)] +[(line_right(i),i) for i in range(80)]
+        
+        angle = (np.linspace(0,180,361)/180 * np.pi).reshape(1,361)
+        x = -x_scale * np.cos(angle) * lidar/1000
+        y = -y_scale * np.sin(angle) * lidar/1000
+        
+        for z in zip(x,y):
+            ob.append(z)
+        
+        return ob
+        
         
         '''
         calibration 필요 --> pixel 하나당 몇 m 인지
         lm per 480 pixel
         '''
-        l = 1
-        x= 480 *x / l
-        y = 680 *y / l /2
-        
-        for i in range(len(lidar)):
-            cv2.line(Map,(y,x),(y,x),(255,255,255))
-        self.map = cv2.cvtColor(Map,cv2.COLOR_BGR2GRAY)
-        self.map = img
+
 
     ########## 각 상황에 맞게 Lidar, Lane_Detection 이용하여 함수 짜기 ##########
     ## 신호/비신호는 path를 짜는것에 있어서는 같을 것 같아 하나로 묶음

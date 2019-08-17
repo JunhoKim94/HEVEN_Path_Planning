@@ -20,26 +20,24 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
     def __init__(self, mission_number):  # 초기화
         self.db = Database()
         self.combine = Combine(mission_number,self.db)
+        self.radius = 5
+        self.car_size = [0.5, 1]
         self.__local_target = self.combine.target
         self.__map = self.combine.map
         self.__path = [(0,0,0)]
 
     def make_path(self):
-            ob = []
             m = MapInfo(80, 60)
-            vehicle = Car(10.0, 5.0)
-            start = (10, 20, 0) # self.db.gps.data + self.db.imu.data
-            end = (35, 5, 0) # self.__local_target
+            vehicle = Car( self.car_size[0], self.car_size[1])
+            start = (0,0,np.pi/2)
+            end = self.__local_target
             m.start = start
             m.end = end
-            num = np.where(self.__map[:,:,0]>0)
-            for z in zip(num[1],num[0]):
-                ob.append(z)
-            m.obstacle = ob
-            vehicle.set_position(m.start)
-            m.update()
+
+            m.obstacle = self.combine.update_map
             
-            plan = HybridAStar(m.start, m.end, m, vehicle, r=5.0)
+            vehicle.set_position(m.start)
+            plan = HybridAStar(m.start, m.end, m, vehicle, r=self.radius)
             plan.run(False)
             xs,ys,yaws = plan.reconstruct_path()
             path = []

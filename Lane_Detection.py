@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-from sklearn import linear_model
 import matplotlib.pyplot as plt
 from threshold import gradient_combine, hls_combine, comb_result
 
@@ -19,9 +18,9 @@ poly_order = 2
 #조사창 너비 정하기 (이미지 좌우 크기/50)
 n_windows = 20
 
-windows_width = 40
+windows_width = 20
 #최대 픽셀 수
-max_pixel_num = 80
+max_pixel_num = 100
 #최소 픽셀 수
 min_pixel_num = 30
 #회귀를 위한 최소 라인 포인트 수
@@ -204,22 +203,26 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             self.left.detect = False
             self.right.detect = False
         
-        if len(self.left.prevx) > 10:
+        num = 5
+        
+        if len(self.left.prevx) > num:
             self.left.prevx.pop(0)
-            left_avg_line = self.smoothing(self.left.prevx, 10)
-            left_avg_fit = np.polyfit(ploty, left_avg_line, 2)
-            left_fit_plotx = left_avg_fit[0] * ploty ** 2 + left_avg_fit[1] * ploty + left_avg_fit[2]
+            left_avg_line = self.smoothing(self.left.prevx, num)
+            left_avg_fit = np.polyfit(ploty, left_avg_line, poly_order)
+            l = np.poly1d(left_avg_fit)
+            left_fit_plotx = l(ploty)
             self.left.current_fit = left_avg_fit
             self.left.allx, self.left.ally = left_fit_plotx, ploty
         else:
             self.left.current_fit = left_fit
             self.left.allx, self.left.ally = y1, ploty
     
-        if len(self.right.prevx) > 10:
+        if len(self.right.prevx) > num:
             self.right.prevx.pop(0)
-            right_avg_line = self.smoothing(self.right.prevx, 10)
-            right_avg_fit = np.polyfit(ploty, right_avg_line, 2)
-            right_fit_plotx = right_avg_fit[0] * ploty ** 2 + right_avg_fit[1] * ploty + right_avg_fit[2]
+            right_avg_line = self.smoothing(self.right.prevx, num)
+            right_avg_fit = np.polyfit(ploty, right_avg_line, poly_order)
+            r = np.poly1d(right_avg_fit)
+            right_fit_plotx = r(ploty)
             self.right.current_fit = right_avg_fit
             self.right.allx, self.right.ally = right_fit_plotx, ploty
         else:
@@ -246,11 +249,12 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
     # 아래부터는 유틸함수
     def make_binary(self): # 이진화 이미지를 만드는 함수
         img = self.reg_of_int(self.original_img)
+        for_test = self.warp_image(img)
+        cv2.imshow("for_test", for_test)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-
-        img = self.warp_image(img)
         img = self.Detect(img)
-        img = self.closeimage(img)
+        #img = self.closeimage(img)
+        img = self.warp_image(img)
               
         return img
     
@@ -268,8 +272,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
     def warp_image(self, img): # 이미지 원근 변환
         M = cv2.getPerspectiveTransform(self.pts1, self.pts2)
-        warped_img = cv2.warpPerspective(img, M, display,flags=cv2.INTER_LINEAR)
-        cv2.imshow("warp",warped_img)
+        warped_img = cv2.warpPerspective(img, M, display,flags=cv2.INTER_AREA)
         return warped_img
     
     def Detect(self,img):
@@ -279,7 +282,8 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         combined_hsv = cv2.cvtColor(np.zeros_like(img), cv2.COLOR_BGR2GRAY)
         
         for color in ['w', 'y', 'b']:
-            combined_hsv = cv2.bitwise_or(combined_hsv, self.detectcolor(img, color))
+            detected = self.detectcolor(img, color)
+            combined_hsv = cv2.bitwise_or(combined_hsv, detected)
             
         #blur_img = cv2.GaussianBlur(img, (7,7), 10)
         #L2 정규화 추가로 noise 제거
@@ -313,7 +317,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel)
 
 def show_video():
-    video="./video/pre_lane.avi"
+    video="./video/pre_lane_Trim.mp4"
     cap = cv2.VideoCapture(video)
     
     left = Line()

@@ -9,46 +9,69 @@
 - Output: Path_Planning에 넘겨줄 target, map
 
 '''
-import Lane_Detection
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
+
+from Lane_Detection import Lane_Detection
 import cv2
 import numpy as np
 import math
+from Database import Database
 
+import matplotlib.pyplot as plt
 #1m/pixel
-x_scale = 3
-y_scale = 4
+x_scale = 2
+y_scale = 3
 # Input : DB, Mission number 
 # Output : target, map
 class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할듯..?
     def __init__(self, mission_number,database):  # 초기화
         self.__mission_number = mission_number
         self.database = database
-        self.Lane_detect = Lane_Detection(None)
+        self.Lane_detect = Lane_Detection()
         self.radius = 5 # 5m to see
         self.map = [(0,0)]
         self.target = (0,0)
-        
+        '''
         if self.__mission_num == 0: self.__static_obstacle() 
         elif self.__mission_num == 1: self.__dynamic_obstacle()
         elif self.__mission_num == 2: self.__parking() 
-
+        '''
     def update_map(self):
-        self.Lane_detect(self.datatbase.main_cam.data)
-        left = self.Lane_detect.left
-        right = self.Lane_detect.right
-        lidar = self.database.lidar.data
-        
+        self.Lane_detect.run(self.database.main_cam.data)
+        left_x = self.Lane_detect.left.allx * 0.1
+        right_x = self.Lane_detect.right.allx * 0.1
+
+        left_y = self.Lane_detect.left.ally * 0.1
+        right_y = self.Lane_detect.right.ally * 0.1
+
+        left = np.polyfit(left_y,left_x,2)
+        right = np.polyfit(right_y,right_x,2)
+
         line_left = np.poly1d(left)
         line_right = np.poly1d(right)
-        
-        ob = [(line_left(i), i) for i in range(80)] +[(line_right(i),i) for i in range(80)]
-        
-        angle = (np.linspace(0,180,361)/180 * np.pi).reshape(1,361)
+
+        line = np.linspace(0,100,100)
+
+        ob = [(int(line_left(i)), i) for i in range(80)] +[(int(line_right(i)),i) for i in range(80)]
+        '''
+        plt.plot(line_left(line),line)
+        plt.plot(line_right(line),line)
+        plt.show()
+        '''
+        lidar = self.database.lidar.data
+        lidar[lidar > 10000] = 0
+        print(lidar)
+        angle = (np.linspace(0,180,361)/180 * np.pi)
         x = -x_scale * np.cos(angle) * lidar/1000
-        y = -y_scale * np.sin(angle) * lidar/1000
-        
+        y = y_scale * np.sin(angle) * lidar/1000
+        plt.plot(x,y)
+        plt.show()
+
         for z in zip(x,y):
             ob.append(z)
+        
         
         return ob
         
@@ -226,4 +249,7 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
             # ================================================================== #
 
 if __name__ == "__main__":
-    Combine()
+    db = Database()
+    db.start()
+    Combine(0,db)
+    db.join()

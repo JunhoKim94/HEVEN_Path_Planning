@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 class HybridAStar(object):
-    def __init__(self, start, end, map_info, car, r):
+    def __init__(self, start, end, map_info, car, r, step = 3):
         self._s = start
         self._e = end
         self._map_info = map_info
@@ -21,6 +21,7 @@ class HybridAStar(object):
         self._r = r
         self._openset = dict()
         self._closeset = dict()
+        self.step = step
 
     def distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
@@ -28,10 +29,10 @@ class HybridAStar(object):
     #Span 할때 left, right, straight 를 스텝을 나누어서 진행 후 Map 안에 있는지 확인
     #형식은 ['l or r or s' , angle or 길이] 로 나타 낸 후 Reed 클래스의 gen 함수를 이용하여 좌표 path로 변환
     def neighbors(self, p):
-        step = 3.0  # 5.0
+        self.step = 3.0  # 5.0
         # Path의 Resolution을 나타내는 Step --> 낮을수록 정확하고 느림 but 높을수록 빠름 but 발산 가능성 높아짐!!
-        paths = [['l', step / self._r], ['s', step], ['r', step / self._r],
-                 ['l', -step / self._r], ['s', -step], ['r', -step / self._r]]
+        paths = [['l', self.step / self._r], ['s', self.step], ['r', self.step / self._r],
+                 ['l', -self.step / self._r], ['s', -self.step], ['r', -self.step / self._r]]
         for path in paths:
             #section이 True면 커브와 직선을 나누어서 데이터를 받고 False면 한꺼번에 하나의 list로 받음
             xs, ys, yaws = ReedsSheppPath.gen_path(p, [path], r=self._r, section=False)

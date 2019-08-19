@@ -186,7 +186,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
 
 def show_video():
     video="./video/pre_lane_Trim.mp4"
-    cap = cv2.VideoCapture(video)
+    cap = cv2.VideoCapture(1)
     
     lane = Lane_Detection()
     while True:

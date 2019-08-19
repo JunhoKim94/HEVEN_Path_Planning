@@ -63,7 +63,6 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         for i in self.floor_color_buf :
             if(i == False):
                 return False
-        print('jesus')
         return True
             
     def search_lines(self,b_img):

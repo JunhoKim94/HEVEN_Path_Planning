@@ -138,7 +138,7 @@ def get_color(img, display):
     h, s, v = cv2.split(img1)
     avg = np.mean(h)
     print(avg)
-    if(avg > 171):
+    if(avg > 171 or avg<10):
         return True
     else:
         return False

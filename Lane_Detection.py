@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from line.util import make_binary, smoothing, draw_points
+from line.util import make_binary, smoothing, draw_points, get_color
 
 '''
 #################### PATH PLAN TEAM ####################
@@ -31,21 +31,23 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         self.windows_width = windows_width
         self.min_pixel_num = min_pixel_num
         self.display = display
+        self.floor_color_buf = []
         
     def run(self,img):
         self.binary_img = make_binary(img,self.display)
         cv2.imshow('bin', self.binary_img)
         self.map = self.search_lines(self.binary_img)
+        self.get_stop_line(self.binary_img)
         
-    def get_stop_line(self,img):  # 정지선을 반환하는 코드(정지선 제일 앞 부분)
-        cv2.imshow('hi', img)
-        left_high = (int(0.3*self.display[0]), int(0.94*self.display[1]))
-        right_low = (int(0.7*self.display[0]), int(0.98*self.display[1]))
+    def get_stop_line(self,img):  # 정지선을 반환하는 코드(정지선 제일 앞 부분), GRAY로 들어옴
+        left_high = (int(0.35*self.display[0]), int(0.94*self.display[1]))
+        right_low = (int(0.65*self.display[0]), int(0.98*self.display[1]))
         img1 = img[left_high[1]:right_low[1], left_high[0]:right_low[0]]
-        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
         num = cv2.countNonZero(img1)
+        img=cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         cv2.rectangle(img, left_high, right_low, (0, 255, 0), 2)
         Area=(right_low[0] - left_high[0])*(right_low[1]-left_high[1])
+        cv2.imshow('hi', img)
         
         if(num > int(Area*0.4)):
             return True
@@ -53,15 +55,15 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             return False
         
     def get_floor_color(self, img):
-        img1 = cv2.cvtColor(img, cv2.COLOR_HSV2BGR) #상황에 따라 적절하게 모드변환
-        left_high = (int(0.4*self.display[0]), int(0.5*self.display[1]))
-        right_low = (int(0.6*self.display[0]), int(0.9*self.display[1]))
-        img2 = img1[left_high[1]:right_low[1], left_high[0]:right_low[0]]
-        b, g, r = cv2.split(img2)
-        avg = np.mean(r)
-        
-        if(avg>160):
-            return('red')
+        flag = get_color(img, self.display)
+        if(len(self.floor_color_buf) > 10):
+            self.floor_color_buf.pop(0)
+        print(self.floor_color_buf)
+        self.floor_color_buf.append(flag)
+        for i in self.floor_color_buf :
+            if(i == False):
+                return False
+        return True
             
     def search_lines(self,b_img):
         
@@ -185,7 +187,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return monitor
 
 def show_video():
-    video="./video/pre_lane_Trim.mp4"
+    video="./video/lane_red.mp4"
     cap = cv2.VideoCapture(video)
     
     cap.set(3,800)
@@ -198,9 +200,10 @@ def show_video():
         if not ret:
             print('비디오 끝')
             break
-       
+        
+        lane.get_floor_color(img)
         lane.run(img)
-        cv2.imshow("zzz",img)
+     #   cv2.imshow("zzz",img)
         
         if cv2.waitKey(1) & 0xFF == 27:
             break        
@@ -210,4 +213,3 @@ def show_video():
 
 if __name__ == "__main__":
     show_video()
-

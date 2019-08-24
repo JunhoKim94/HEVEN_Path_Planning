@@ -10,6 +10,7 @@ boundaries = [
     (np.array([0, 0, 180], dtype="uint8"), np.array([180, 25, 255], dtype="uint8")) # white
 ]
 
+
 def reg_of_int(img): # 이미지에서 roi 잘라내기
     height, width = img.shape[:2]
     #roi설정을 위한 vertics, 위부터 차례대로 왼쪽 위, 왼쪽 아래, 오른쪽 아래, 오른쪽 위다.
@@ -141,12 +142,27 @@ def smoothing(lines, pre_lines=3, display = (800,600)):
 
 def make_binary(original_img,display): # 이진화 이미지를 만드는 함수
     img = reg_of_int(original_img)
-    for_test = warp_image(img,display)
-    cv2.imshow("for_test", for_test)
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    #get_color(img, display)
     img = Detect(img)
     #img = self.closeimage(img,7)
     img = warp_image(img,display)
     #img = get_birdview(img,display)
           
     return img
+
+def get_color(img, display):
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    left_high = (int(0.2*img.shape[1]), int(0.8*img.shape[0]))
+    right_low = (int(0.8*img.shape[1]), int(1*img.shape[0]))
+    img1 = img[left_high[1]:right_low[1], left_high[0]:right_low[0]]
+    img = cv2.rectangle(img, left_high, right_low, (0, 255, 0), 2)
+    img = cv2.resize(img, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+    cv2.imshow('img1', img)
+    h, s, v = cv2.split(img1)
+    avg = np.mean(h)
+    print(avg)
+    if(avg > 171 or avg<10):
+        return True
+    else:
+        return False

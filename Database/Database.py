@@ -10,21 +10,23 @@ from .Platform import Platform
 from .imu import Imu
 from .Screens import Screens
 from .Path import Path
+from .Control_data import ControlData
 
 import threading
 import time
 
 class Database:
     def __init__(self, gps=True, platform=True, cam=True, lidar=True, imu=True):
-        self.__gps_on = False
-        self.__platform_on = True
-        self.__cam_on = False
-        self.__lidar_on = False
-        self.__imu_on = False
+        self.__gps_on = gps
+        self.__platform_on = platform
+        self.__cam_on = cam
+        self.__lidar_on = lidar
+        self.__imu_on = imu
 
         self.flag = Flag()
         self.path = Path()
         self.screen = Screens()
+        self.control_data = ControlData()
         print("\nIntializing Database")
         print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────────")
         if self.__gps_on:
@@ -32,7 +34,7 @@ class Database:
             self.__gps_thread = threading.Thread(target=self.gps.main)
 
         if self.__platform_on:
-            self.platform  = Platform('COM3', 115200, flag=self.flag)
+            self.platform  = Platform('COM8', 115200, flag=self.flag)
             self.__platform_thread = threading.Thread(target=self.platform.main)
 
         if self.__cam_on:
@@ -91,11 +93,11 @@ class Database:
         if self.__cam_on:
             self.__main_cam_thread.join()
             self.__sub_cam_thread.join()
-        
+
         if self.__lidar_on:
             self.__lidar_thread.join()
             time.sleep(0.1)
-        
+
         if self.__imu_on:
             self.__imu_thread.join()
         print("──────────────────────────────────────────────────────────────────────────────────────────────────────────────────")

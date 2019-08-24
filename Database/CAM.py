@@ -41,8 +41,8 @@ class CAM:
                 else:
                     pass
         time.sleep(0.1)
-        print("Terminating %s CAM" % self.__name)
         self.__capture.release()
+        print("Terminating %s CAM" % self.__name)
 
 
     @property

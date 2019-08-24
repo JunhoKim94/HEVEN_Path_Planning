@@ -49,9 +49,11 @@ class GPS:
         tmp = ''.join(data)
         if data == ['\n']:
             return 0
-
-        tmp = tmp.split("$")[1]
-        datas = tmp.split(',')
+        try:
+            tmp = tmp.split("$")[1]
+            datas = tmp.split(',')
+        except:
+            datas = ["123123123123123"]
 
         if datas[0] == "GNRMC":
             try:

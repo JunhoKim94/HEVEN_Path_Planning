@@ -43,7 +43,7 @@ class AStar(object):
             x = min(self._openset, key=lambda key: self._openset[key]['f'])
             self._closeset[x] = self._openset.pop(x)
             
-            if self.distance(x, self._e) < 1.0:
+            if self.distance(x, self._e) < self.step:
                 if x != self._e:
                     self._closeset[self._e] = {'camefrom': x}
                     print('Astar',time.time() - st)

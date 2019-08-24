@@ -187,7 +187,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         return monitor
 
 def show_video():
-    video="./video/lane_red.mp4"
+    video="video\pre_lane_Trim.mp4"
     cap = cv2.VideoCapture(video)
     
     cap.set(3,800)
@@ -203,7 +203,7 @@ def show_video():
         
         lane.get_floor_color(img)
         lane.run(img)
-     #   cv2.imshow("zzz",img)
+        cv2.imshow("zzz",img)
         
         if cv2.waitKey(1) & 0xFF == 27:
             break        

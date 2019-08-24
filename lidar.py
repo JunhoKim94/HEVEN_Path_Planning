@@ -80,7 +80,7 @@ for i in range(0,5972,10):
         m.obstacle = ob
 
         vehicle.set_position(m.start)
-        plan = HybridAStar(m.start, m.end, m, vehicle, r=5.0)
+        plan = HybridAStar(m.start, m.end, m, vehicle, r=5.0, r_step = 5 , grid_step=5)
         
         if plan.run(False):
             xs,ys,yaws = plan.reconstruct_path()

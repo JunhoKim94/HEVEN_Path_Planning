@@ -13,7 +13,7 @@ import time
 import numpy as np
 
 class HybridAStar(object):
-    def __init__(self, start, end, map_info, car, r):
+    def __init__(self, start, end, map_info, car, r, r_step = 3, grid_step = 10):
         self._s = start
         self._e = end
         self._map_info = map_info
@@ -21,6 +21,8 @@ class HybridAStar(object):
         self._r = r
         self._openset = dict()
         self._closeset = dict()
+        self.step = r_step
+        self.grid_step = grid_step
 
     def distance(self, p1, p2):
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
@@ -28,10 +30,10 @@ class HybridAStar(object):
     #Span 할때 left, right, straight 를 스텝을 나누어서 진행 후 Map 안에 있는지 확인
     #형식은 ['l or r or s' , angle or 길이] 로 나타 낸 후 Reed 클래스의 gen 함수를 이용하여 좌표 path로 변환
     def neighbors(self, p):
-        step = 3.0  # 5.0
+        #self.step = 3.0
         # Path의 Resolution을 나타내는 Step --> 낮을수록 정확하고 느림 but 높을수록 빠름 but 발산 가능성 높아짐!!
-        paths = [['l', step / self._r], ['s', step], ['r', step / self._r],
-                 ['l', -step / self._r], ['s', -step], ['r', -step / self._r]]
+        paths = [['l', self.step / self._r], ['s', self.step], ['r', self.step / self._r],
+                 ['l', -self.step / self._r], ['s', -self.step], ['r', -self.step / self._r]]
         for path in paths:
             #section이 True면 커브와 직선을 나누어서 데이터를 받고 False면 한꺼번에 하나의 list로 받음
             xs, ys, yaws = ReedsSheppPath.gen_path(p, [path], r=self._r, section=False)
@@ -51,7 +53,7 @@ class HybridAStar(object):
     #A star로 경로를 찾았을 때 현재 지점에서 end 까지의 경로거리 = hueristic cost
     def h_cost(self, s):
         path = []
-        plan = AStar((s[0], s[1]), (self._e[0], self._e[1]), self._map_info)
+        plan = AStar((s[0], s[1]), (self._e[0], self._e[1]), self._map_info, self.grid_step)
         if plan.run(display=False):
             path = plan.reconstruct_path()
         d = 0
@@ -116,8 +118,8 @@ class HybridAStar(object):
             if not self.is_collision_rs_car(xs, ys, yaws):
                 #xs,ys,yaws 의 path 좌표가 충돌을 안한다면 현재 path로 결정
                 self._closeset[self._e] = {'camefrom': x, 'path': [path, [xs, ys, yaws]]}
-                #print("time:" , time.time() - st)
-                #print("depth:" , self._closeset[x]['depth'])
+                print("time:" , time.time() - st)
+                print("depth:" , self._closeset[x]['depth'])
                 return True
             for y, path, line in self.neighbors(x):
                 # 골 지점에 도착하지 않았다면 현재 좌표 x에서 neighbors 를 통해 자식 노드를 Span
@@ -151,17 +153,17 @@ class HybridAStar(object):
         return False
 
 def main1():
-    m = MapInfo(60, 30)
+    m = MapInfo(200, 800)
     car = Car(5.0, 2.0)
     m.show()
-    m.start = (10, 5, 0)
-    m.end = (50, 5, 0)
+    m.start = (100, 10, np.pi/2)
+    m.end = (100, 500, np.pi/3)
     car.set_position(m.start)
     car.show()
     m.obstacle = [(20, i) for i in range(15)] + [(35, 30 - i) for i in range(15)]
     m.update()
     #input('enter to start ...')
-    plan = HybridAStar(m.start, m.end, m, car, r=5.0)
+    plan = HybridAStar(m.start, m.end, m, car, r=10.0,)
     if plan.run(False):
         xs, ys, yaws = plan.reconstruct_path()
         m.path = list(zip(xs, ys))
@@ -180,10 +182,10 @@ def main1():
     m.wait_close()
 
 def main2():
-    m = MapInfo(60, 40)
+    m = MapInfo(600, 400)
     car = Car(10.0, 5.0)
     start = (10, 25, 0)
-    end = (45, 5, math.pi / 2)
+    end = (450, 50, math.pi / 2)
     m.show()
     m.start = start
     m.end = end

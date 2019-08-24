@@ -7,19 +7,20 @@ import math
 import time
 
 class AStar(object):
-    def __init__(self, start, end, map_info):
+    def __init__(self, start, end, map_info, step = 2):
         self._s = start
         self._e = end
         self._map_info = map_info
         self._openset = dict()
         self._closeset = dict()
+        self.step = step
 
     def distance(self, p1, p2):
         #return abs(p1[0] - p2[0])+abs(p1[1] - p2[1])
         return math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2)
 
     def neighbor_nodes(self, x):
-        plist = [(x[0] - 1, x[1] - 1), (x[0] - 1, x[1]), (x[0] - 1, x[1] + 1), (x[0], x[1] + 1), (x[0] + 1, x[1] + 1), (x[0] + 1, x[1]), (x[0] + 1, x[1] - 1), (x[0], x[1] - 1)]
+        plist = [(x[0] - self.step, x[1] - self.step), (x[0] - self.step, x[1]), (x[0] - self.step, x[1] + self.step), (x[0], x[1] + self.step), (x[0] + self.step, x[1] + self.step), (x[0] + self.step, x[1]), (x[0] + self.step, x[1] - self.step), (x[0], x[1] - self.step)]
         for p in plist:
             if not self._map_info.is_collision(point=p):
                 yield p

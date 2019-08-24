@@ -35,6 +35,7 @@ def draw_points(img, x_points, y_points, color, thickness):
         print("error2")
 
 def warp_image(img,display): # 이미지 원근 변환
+    
     height, width = img.shape[:2]
     
     pts1 = np.float32([(0.45*width, 0.07*height),
@@ -52,6 +53,28 @@ def warp_image(img,display): # 이미지 원근 변환
     M = cv2.getPerspectiveTransform(pts1, pts2)
     warped_img = cv2.warpPerspective(img, M, display,flags=cv2.INTER_CUBIC+cv2.INTER_LINEAR)
     return warped_img
+
+def get_birdview(img,display = (800,600)):
+    mtx = np.array([[1.03223922e+03, 0.00000000e+00, 3.83576223e+02],
+                    [0, 1.09843870e+03, 3.16372021e+02],
+                    [0, 0, 1.00000000e+00]])
+    dist = np.array([[1.50968260e-01, -2.00958085e+00, -6.04807148e-03, -4.80908654e-03,
+                      7.14436124e+00]])
+
+    pts1 = np.float32([(348, 28),
+                       (18, 263),
+                       (798, 263),
+                       (463, 28)])
+
+    pts2 = np.float32([(348, 0),
+                       (348, 600),
+                       (463, 600),
+                       (463, 0)])
+    #img = cv2.undistort(img, mtx, dist, None, mtx)
+    M = cv2.getPerspectiveTransform(pts1, pts2)
+    warped_img = cv2.warpPerspective(img, M, display, flags=cv2.INTER_CUBIC+cv2.INTER_LINEAR)
+    return warped_img
+
 
 def Detect(img):
     #th_sobelx, th_sobely, th_mag, th_dir = (35, 100), (30, 255), (30, 255), (0.7, 1.3)
@@ -124,5 +147,6 @@ def make_binary(original_img,display): # 이진화 이미지를 만드는 함수
     img = Detect(img)
     #img = self.closeimage(img,7)
     img = warp_image(img,display)
+    #img = get_birdview(img,display)
           
     return img

@@ -65,19 +65,19 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
             
     def search_lines(self,b_img):
         
-        histogram = np.sum(b_img[int(b_img.shape[0]/1.5):, :], axis=0)
+        histogram = np.sum(b_img[int(b_img.shape[0]/2):, :], axis=0)
 
         monitor = np.dstack((b_img, b_img, b_img))
         
         midpoint = np.int(histogram.shape[0] / 2)
         
-        left_sk = np.linspace(0.3, 1, 0.8*midpoint)
-        left_sk = np.concatenate([left_sk,np.linspace(1, 0, 0.2*midpoint)])
+        left_sk = np.linspace(0.3, 1, 0.85*midpoint)
+        left_sk = np.concatenate([left_sk,np.linspace(1, 0, 0.15*midpoint)])
         
-        right_sk = np.linspace(0, 1, 0.2*midpoint)
-        right_sk = np.concatenate([right_sk,np.linspace(1, 0.3, 0.8*midpoint)])
+        right_sk = np.linspace(0, 1, 0.15*midpoint)
+        right_sk = np.concatenate([right_sk,np.linspace(1, 0.3, 0.85*midpoint)])
                     
-        left_x_max = np.argmax(left_sk*histogram[:midpoint])
+        left_x_max = np.argmax(left_sk*histogram[:midpoint]) 
         right_x_max = np.argmax(right_sk*histogram[midpoint:]) + midpoint
 
         window_height = np.int(b_img.shape[0]/self.n_windows)
@@ -188,9 +188,13 @@ def show_video():
     video="./video/pre_lane_Trim.mp4"
     cap = cv2.VideoCapture(video)
     
-    lane = Lane_Detection()
+    cap.set(3,800)
+    cap.set(4,600)
+    
+    lane = Lane_Detection(display=(800,600))
     while True:
         ret, img = cap.read()
+        img = cv2.resize(img,(800,600),interpolation = cv2.INTER_AREA)
         if not ret:
             print('비디오 끝')
             break

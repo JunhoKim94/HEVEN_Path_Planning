@@ -4,9 +4,9 @@ import math
 # from Database.Database import Database
 
 LiDAR_MIN = 5  # 주차장에 차가 없다고 판단할 라이다의 최소 거리
-DIAGONAL_MIN = 40  # 사각형이라고 인식할 대각선의 최소 길이
-DIAGONAL_MAX = 300  # 사각형이라고 인식할 대각선의 최대 길이
-
+DIAGONAL_MIN = 250  # 사각형이라고 인식할 대각선의 최소 길이
+DIAGONAL_MAX = 350  # 사각형이라고 인식할 대각선의 최대 길이
+SCALE = 2  # 1 pixel에 해당하는 cm (축척)
 
 def parking(cap):
     '''
@@ -37,24 +37,33 @@ def parking(cap):
 
         # ============================ 사각형 찾기 ============================== #
         ## bird view로 바꿈
+
         source_points = np.array(
-            [(0.433 * width, 0.177 * height), (0.155 * width, 0.348 * height), (0.848 * width, 0.413 * height),
-             (0.745 * width, 0.198 * height)], np.float32)  # 왼쪽 위부터 반시계방향
+            [(0.433 * width, 0.177 * height), (0.155 * width, 0.348 * height),
+             (0.848 * width, 0.413 * height), (0.745 * width, 0.198 * height)], np.float32)  # 왼쪽 위부터 반시계방향
+
+        '''
         destination_points = np.array(
-            [(0.445 * width, 0.084 * height), (0.445 * width, 0.484 * height), (0.645 * width, 0.484 * height), (0.645 * width, 0.084 * height)],
-            np.float32)  # 왼쪽 위부터 반시계방향
+            [(0.445 * width, 0.084 * height), (0.445 * width, 0.484 * height),
+             (0.645 * width, 0.484 * height), (0.645 * width, 0.084 * height)], np.float32)  # 왼쪽 위부터 반시계방향
+        '''
+        destination_points = np.array(
+            [(0.425 * width, 0.260 * height), (0.425 * width, 0.8 * height),
+             (0.665 * width, 0.8 * height), (0.665 * width, 0.260 * height)], np.float32)  # 왼쪽 위부터 반시계방향
+
+
         warp_matrix = cv2.getPerspectiveTransform(source_points, destination_points)
         birdview_img = cv2.warpPerspective(cap, warp_matrix, (width, height), flags=cv2.INTER_LINEAR)
 
         cv2.imshow('why', birdview_img)
 
         ## 차선만 뽑아냄(흑백으로 바꿈)
-        _, threshold_img = cv2.threshold(birdview_img, 190, 255, cv2.THRESH_BINARY)
+        _, threshold_img = cv2.threshold(birdview_img, 180, 255, cv2.THRESH_BINARY)
 
         ## FOR DEBUGGING ##
         # 디버깅시 차선의 흑백 구분이 제대로 되나 확인
         # cv2.imshow('threshold_img', threshold_img)
-        cv2.imshow('threshold_img', threshold_img)
+        # cv2.imshow('threshold_img', threshold_img)
 
         ## 사각형이 검출되지 않는 경우 -> 그냥 진행
         contours, _ = cv2.findContours(threshold_img, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -134,21 +143,28 @@ def parking(cap):
 
             # print(rectangle_coordinate)
             # 모두 0으로 되어 있는 빈 Canvas(검정색)
-            img = np.zeros((height, width, 3), np.uint8)
-            new_map = cv2.line(img, rectangle_coordinate[far_point[0]], rectangle_coordinate[far_point[1]],
-                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
-            new_map = cv2.line(new_map, rectangle_coordinate[far_point[0]], rectangle_coordinate[close_point[0]],
-                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
-            new_map = cv2.line(new_map, rectangle_coordinate[far_point[1]], rectangle_coordinate[close_point[1]],
-                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
+            img = np.zeros((600, 800, 3), np.uint8)
+            final_rectangle_coordinate = [(0,0), (0,0), (0,0), (0,0)]
 
+            final_rectangle_coordinate[0] = (rectangle_coordinate[close_point[0]][0] + 80, rectangle_coordinate[close_point[0]][1] + 50)
+            final_rectangle_coordinate[1] = (rectangle_coordinate[far_point[0]][0] + 80, rectangle_coordinate[far_point[0]][1] + 50)
+            final_rectangle_coordinate[2] = (rectangle_coordinate[far_point[1]][0] + 80, rectangle_coordinate[far_point[1]][1] + 50)
+            final_rectangle_coordinate[3] = (rectangle_coordinate[close_point[1]][0] + 80, rectangle_coordinate[close_point[1]][1] + 50)
+            final_center = [center[0] + 80, center[1] + 50]
+
+
+            final_map = cv2.line(img, final_rectangle_coordinate[0], final_rectangle_coordinate[1],
+                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
+            final_map = cv2.line(final_map, final_rectangle_coordinate[1], final_rectangle_coordinate[2],
+                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
+            final_map = cv2.line(final_map, final_rectangle_coordinate[2], final_rectangle_coordinate[3],
+                               (255, 255, 255), 10)  # 선은 흰색을 따라 그림
             ## 넘겨줄때 얘는 꼭 주석처리해야함!!
-            new_map = cv2.circle(new_map, center, 10, (255, 255, 255), -1)
+            final_map = cv2.circle(final_map, (final_center[0], final_center[1]), 10, (255, 255, 255), -1)
 
             ## FOR DEBUGGING ##
             # map 출력 테스트
-            cv2.imshow('final', new_map)
-
+            cv2.imshow('final', final_map)
 
             ## 주차장 쪽의 기울기
             if rectangle_coordinate[far_point[0]][0] < rectangle_coordinate[far_point[1]][0]:
@@ -158,9 +174,19 @@ def parking(cap):
                 gradient = (rectangle_coordinate[far_point[0]][1] - rectangle_coordinate[far_point[1]][1]) /\
                            (rectangle_coordinate[far_point[0]][0] - rectangle_coordinate[far_point[1]][0])
 
-            angle = 0.785398 - math.atan(gradient)  # 45도 라디안 값 - 플랫폼의 움직인 각도
+            center_angle = 1.570796 + math.atan(gradient)  # 90도 라디안 값 + 플랫폼의 움직인 각도
+            final_center[3] = center_angle
 
-            return new_map, center, angle
+            ## 플랫폼 현재 위치 정하기
+            platform_location = [400, 600, 2.356195]  # 차의 각도는 항상 135도(카메라가 45도 고정이기 떄문)
+
+            '''
+            1. 사각형(0-1, 1-2, 2-3 순서) 좌표
+            2. 플랫폼 현재좌표 및 각도
+            3. 목적지 좌표 및 각도
+            순으로 반환
+            '''
+            return final_rectangle_coordinate, platform_location, final_center
 
         # ================================================================== #
     except:

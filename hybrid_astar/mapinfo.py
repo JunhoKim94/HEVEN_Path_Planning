@@ -8,7 +8,7 @@ import time
 from scipy.spatial import cKDTree
 
 class MapInfo(object):
-    def __init__(self, width, height):
+    def __init__(self, width, height, distance = 10):
         self.width = width
         self.height = height
         self._okdtree = None
@@ -22,6 +22,7 @@ class MapInfo(object):
         self._path = []
         self._roadmap = dict()
         self._update_i = 0
+        self.distance = distance
         plt.figure()
 
     @property
@@ -72,7 +73,7 @@ class MapInfo(object):
             for p in zip(px, py):
                 d, _ = self._okdtree.query(p)
                 #print(d)
-                if d <= 20.0 or p[0] < 0 or p[0] > self.width or p[1] < 0 or p[1] > self.height:
+                if d <= self.distance or p[0] < 0 or p[0] > self.width or p[1] < 0 or p[1] > self.height:
                     return True
             return False
         if 'point' in kwargs:

@@ -32,18 +32,18 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
         self.__path = [(0,0,0)]
 
     def make_path(self):
-            m = MapInfo(800, 600,distance = 20)
-            vehicle = Car(60,30)
+            m = MapInfo(800, 600 , distance = 10)
+            vehicle = Car(60,20)
             start = (350,50,np.pi/2)
-            end = (400,400,np.pi/2)#self.__local_target
+            end = (400,450,np.pi/2)#self.__local_target
             m.start = start
             m.end = end
 
             m.obstacle = self.combine.update_map()
             
             vehicle.set_position([start[0],start[1],start[2]])
-            vehicle.show()
-            plan = HybridAStar(m.start, m.end, m, vehicle, r= self.radius, r_step = 30, grid_step=10)
+            #vehicle.show()
+            plan = HybridAStar(m.start, m.end, m, vehicle, r= self.radius, r_step = 25, grid_step=10)
 
             if plan.run(False):
                 xs,ys,yaws = plan.reconstruct_path()
@@ -54,7 +54,7 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
                 plt.show()
 
 
-                gx,gy = float(self.db.gps.data[1]), float(self.db.gps.data[3])
+                '''gx,gy = float(self.db.gps.data[1]), float(self.db.gps.data[3])
                 theta = float(self.db.imu.data[2] + 180) / 180 * np.pi
                 
                 gx = gx // 100 + (gx % 100)/60
@@ -67,9 +67,9 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
                 ys = np.array(ys)/35
 
                 x = np.cos(theta) * xs - np.sin(theta) * ys + gx
-                y = np.sin(theta) * xs + np.cos(theta) * ys + gy
+                y = np.sin(theta) * xs + np.cos(theta) * ys + gy'''
             
-                for cord in zip(x,y):
+                for cord in zip(xs,ys):
                     path.append(cord)
             
             print(path)

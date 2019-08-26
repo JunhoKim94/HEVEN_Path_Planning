@@ -36,7 +36,7 @@ class HybridAStar(object):
                  ['l', -self.step / self._r], ['s', -self.step], ['r', -self.step / self._r]]
         for path in paths:
             #section이 True면 커브와 직선을 나누어서 데이터를 받고 False면 한꺼번에 하나의 list로 받음
-            xs, ys, yaws = ReedsSheppPath.gen_path(p, [path], r=self._r, section=False)
+            xs, ys, yaws = ReedsSheppPath.gen_path(p, [path], r=self._r, section=False, step_size = self.step)
             if not self.is_collision_rs_car(xs, ys, yaws):
                 yield (round(xs[-1], 1), round(ys[-1], 1), round(yaws[-1], 1)), path, [xs, ys, yaws]
                 #xs,ys,yaws의 마지막 수를 소수점 2번째까지 반올림 + path + 반올림 하지 않은 [xs,ys,yaws]
@@ -99,7 +99,7 @@ class HybridAStar(object):
             rspath.calc_paths()
             path, _ = rspath.get_shortest_path()
             #reed 클래스를 통해 가장 짧은 경로를 Dubins path 로 탐색
-            xs, ys, yaws = ReedsSheppPath.gen_path(x, path, self._r, section=False)
+            xs, ys, yaws = ReedsSheppPath.gen_path(x, path, self._r, section=False, step_size = self.step)
             
             #현재 차의 방향과 도착지점의 방향이 같을때 직선 경로를 생성하는 코드 추가
             #현재 좌표에서 goal까지 직선 이동이 가능할 때 직선으로 이동

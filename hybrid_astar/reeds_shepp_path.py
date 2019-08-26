@@ -436,7 +436,7 @@ class ReedsSheppPath(object):
         return paths
 
     @classmethod
-    def gen_path(cls, s, path, r=1.0, section=True):
+    def gen_path(cls, s, path, r=1.0, section=True, step_size = 1):
         #section이 True면 커브와 직선을 나누어서 데이터를 받고 False면 한꺼번에 하나의 list로 받음
         def calc_TurnCenter(point, dir='l', r=1.0):
             if dir == 'l':
@@ -458,7 +458,7 @@ class ReedsSheppPath(object):
         yaw = s[2]
         for p in path:
             if p[0] == 's':
-                for l in arange(0, p[1], 1 if p[1] > 0 else -1):
+                for l in arange(0, p[1], step_size if p[1] > 0 else -step_size):
                     ps_x.append(start[0] + cos(yaw) * l)
                     ps_y.append(start[1] + sin(yaw) * l)
                     ps_yaw.append(yaw)
@@ -478,7 +478,7 @@ class ReedsSheppPath(object):
                 center = calc_TurnCenter(start, p[0], r)
                 ang_start = atan2(start[1] - center[1], start[0] - center[0])
                 ang_end = ang_start + p[1] if p[0] == 'l' else ang_start - p[1]
-                step = (1 / r) if ang_start < ang_end else (-1 / r)
+                step = (step_size / r) if ang_start < ang_end else (step_size / r)
                 for ang in arange(ang_start, ang_end, step):
                     ps_x.append(center[0] + cos(ang) * r)
                     ps_y.append(center[1] + sin(ang) * r)

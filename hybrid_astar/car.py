@@ -38,8 +38,10 @@ class Car(object):
 
     def show(self):
         self.get_outline()
+        print(self._outline_x,self._outline_y)
         draw_point(self._pos, self._l / 2.0)
         plt.plot(self._outline_x, self._outline_y, color='black')
+        plt.show()
         
 
 if __name__ == "__main__":

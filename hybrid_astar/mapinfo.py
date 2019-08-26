@@ -71,7 +71,8 @@ class MapInfo(object):
             px, py = kwargs['car_outline']
             for p in zip(px, py):
                 d, _ = self._okdtree.query(p)
-                if d <= 1.0 or p[0] < 0 or p[0] > self.width or p[1] < 0 or p[1] > self.height:
+                #print(d)
+                if d <= 20.0 or p[0] < 0 or p[0] > self.width or p[1] < 0 or p[1] > self.height:
                     return True
             return False
         if 'point' in kwargs:

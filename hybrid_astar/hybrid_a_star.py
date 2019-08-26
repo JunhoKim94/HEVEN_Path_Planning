@@ -154,16 +154,16 @@ class HybridAStar(object):
 
 def main1():
     m = MapInfo(200, 800)
-    car = Car(5.0, 2.0)
+    car = Car(50, 20)
     m.show()
     m.start = (100, 10, np.pi/2)
-    m.end = (100, 500, np.pi/3)
+    m.end = (100, 500, np.pi/2)
     car.set_position(m.start)
     car.show()
     m.obstacle = [(20, i) for i in range(15)] + [(35, 30 - i) for i in range(15)]
     m.update()
     #input('enter to start ...')
-    plan = HybridAStar(m.start, m.end, m, car, r=10.0,)
+    plan = HybridAStar(m.start, m.end, m, car, r=10.0)
     if plan.run(False):
         xs, ys, yaws = plan.reconstruct_path()
         m.path = list(zip(xs, ys))
@@ -178,7 +178,9 @@ def main1():
             m.path = list(zip(xs, ys))
             car.set_position([xs[i], ys[i], yaws[i]])
             car.show()
+            print(car._outline_x,car._outline_y)
             plt.pause(0.1)
+
     m.wait_close()
 
 def main2():

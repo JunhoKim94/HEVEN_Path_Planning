@@ -46,7 +46,7 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
         left_x = (self.Lane_detect.left.allx)#/37 * 20
         right_x = (self.Lane_detect.right.allx)#/37 * 20
 
-        #대칭이동 (y= 400 에서)
+        #대칭이동 (y= 300 에서)
         left_y = (600 - self.Lane_detect.left.ally)#/35 * 20
         right_y = (600 - self.Lane_detect.right.ally)#/35 * 20
 
@@ -56,7 +56,7 @@ class Combine:  # 나중에 이 함수에 display 메소드도 추가해야 할�
         line_left = np.poly1d(left)
         line_right = np.poly1d(right)
 
-        ob = [(int(line_left(i)), i) for i in range(800)] +[(int(line_right(i)),i) for i in range(800)]
+        ob = [(int(line_left(i)), i) for i in range(600)] +[(int(line_right(i)),i) for i in range(600)]
         '''
         plt.plot(line_left(line),line)
         plt.plot(line_right(line),line)

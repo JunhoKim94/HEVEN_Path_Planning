@@ -32,7 +32,7 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
         self.__path = [(0,0,0)]
 
     def make_path(self):
-            m = MapInfo(800, 600 , distance = 10)
+            m = MapInfo(800, 600 , distance = 15)
             vehicle = Car(60,20)
             start = (350,50,np.pi/2)
             end = (400,450,np.pi/2)#self.__local_target

@@ -22,7 +22,10 @@ class Database:
         self.__cam_on = cam
         self.__lidar_on = lidar
         self.__imu_on = imu
-
+        #미션 패킷 index 별 0: 미션번호 1: 안씀 2: 
+        self.mission_packet = [0, None, None, None, None]
+        self.now_idx = 0
+        
         self.flag = Flag()
         self.path = Path()
         self.screen = Screens()

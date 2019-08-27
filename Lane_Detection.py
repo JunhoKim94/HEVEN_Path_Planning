@@ -35,7 +35,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         
     def run(self,img):
         self.binary_img = make_binary(img,self.display)
-        cv2.imshow('bin', self.binary_img)
+        #cv2.imshow('bin', self.binary_img)
         self.map = self.search_lines(self.binary_img)
         self.get_stop_line(self.binary_img)
         
@@ -47,7 +47,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         img=cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
         cv2.rectangle(img, left_high, right_low, (0, 255, 0), 2)
         Area=(right_low[0] - left_high[0])*(right_low[1]-left_high[1])
-        cv2.imshow('hi', img)
+        #cv2.imshow('hi', img)
         
         if(num > int(Area*0.4)):
             return True
@@ -183,7 +183,7 @@ class Lane_Detection: #Lane_Detction 클래스 생성후, original img 변경
         draw_points(monitor,self.left.allx,ploty,(0,0,255),3)
         draw_points(monitor,self.right.allx,ploty,(0,255,0),3)
 
-        cv2.imshow("ss",monitor)
+        #cv2.imshow("ss",monitor)
         return monitor
 
 def show_video():

@@ -1,12 +1,18 @@
 from Database import Database
 from Control import Control
 #from Monitor import Monitor
+from Path_Planning import Path_Planning
 import time
 import cv2
 
 def main():
     db = Database(gps=True,lidar=False,cam=False,imu=True)      
     db.start()
+
+    path = Path_Planning(0,db)
+    Path.make_path()
+    p = Path.path
+    #db.path.generate_path = p
 
     c = Control(db=db)
     c.start()

@@ -39,7 +39,7 @@ class Path_Planning:  # Mission으로부터 mission number를 받아 그에 맞�
             m.start = start
             m.end = end
 
-            m.obstacle = self.combine.update_map()
+            m.obstacle = self.combine.update_map(left_on = True ,right_on = True, lidar_on = True)
             
             vehicle.set_position([start[0],start[1],start[2]])
             #vehicle.show()
@@ -88,7 +88,5 @@ if __name__ == "__main__":
     p = Path.path
     #db.path.generate_path = p
     
-    plt.plot(p)
-    plt.show()
 
 #    db.join()
